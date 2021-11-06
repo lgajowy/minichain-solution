@@ -6,9 +6,10 @@ import java.security.MessageDigest
 
 object Sha256 {
   private val algorithm = "SHA-256"
-  private val numberOfBytes = 32
 
-  val zeroHash: Bytes = {
+  final val NumberOfBytes = 32
+
+  final val ZeroHash: Bytes = {
     val instance = getDigestMessageInstance()
     instance.update(Bytes(32))
     instance.digest()
@@ -24,8 +25,7 @@ object Sha256 {
     val hash = messageDigest.digest()
 
     // TODO: Do I need this assertion anyway?
-    assert(hash.length == numberOfBytes)
-
+    assert(hash.length == NumberOfBytes)
     hash
   }
 

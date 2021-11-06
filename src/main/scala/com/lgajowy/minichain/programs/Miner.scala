@@ -3,10 +3,20 @@ package com.lgajowy.minichain.programs
 import cats.effect.Sync
 import cats.implicits._
 import com.lgajowy.minichain.algebras.{ BlockVerifier, NonceProvider }
+import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
+import com.lgajowy.minichain.tools.Sha256
 
 trait Miner[F[_]] {
+
   def mine(index: Index, parentHash: Hash, transactions: Seq[Transaction], miningTarget: MiningTarget): F[Block]
+
+  def mineGenesis(): F[Block] = mine(
+    Index(0),
+    Hash(Sha256.ZeroHash),
+    Seq(Transaction("Hello Blockchain, this is Genesis :)")),
+    StdMiningTarget
+  )
 }
 
 object Miner {
@@ -36,7 +46,6 @@ object Miner {
         } yield minedBlock
       }
       task()
-      
     }
   }
 }
