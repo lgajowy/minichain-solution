@@ -6,21 +6,29 @@ import com.lgajowy.minichain.domain.Hash
 import java.security.MessageDigest
 
 object Sha256 {
+  private val algorithm = "SHA-256"
+  private val numberOfBytes = 32
 
-  val NumberOfBytes = 32
-  val TheDigest: MessageDigest = MessageDigest.getInstance("SHA-256")
-  val ZeroHash: Hash = Hash(TheDigest.digest())
+  val zeroHash: Hash = {
+    val instance = getDigestMessageInstance()
+    instance.update(Bytes(32))
+    Hash(instance.digest())
+  }
 
-  // FIXME: this is not thread-safe as "TheDigest" is shared between apply invocations
+  // TODO: Is this thread safe now, that we get a new MessageDigest every time?
+  //  Is this memory efficient (can I do better)?
   def apply(aggregatedBytes: Bytes*): Hash = {
+    val messageDigest: MessageDigest = getDigestMessageInstance()
+    val allBytes: Array[Byte] = aggregatedBytes.flatten.toArray
+    messageDigest.update(allBytes)
 
-    for (bytes <- aggregatedBytes) {
-      TheDigest.update(bytes)
-    }
+    val hash = messageDigest.digest()
 
-    val hash = TheDigest.digest()
-    assert(hash.length == NumberOfBytes)
+    // TODO: Do I need this assertion anyway?
+    assert(hash.length == numberOfBytes)
 
     Hash(hash)
   }
+
+  private def getDigestMessageInstance(): MessageDigest = MessageDigest.getInstance(algorithm)
 }
