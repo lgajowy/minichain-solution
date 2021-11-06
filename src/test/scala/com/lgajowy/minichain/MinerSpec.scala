@@ -15,12 +15,8 @@ import scala.util.Random
 
 class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
-  val nonceProvider = NonceProvider.make[IO](new Random())
-  val hashCalculator = HashCalculator.make[IO]()
-  val blockVerifier = BlockVerifier.make[IO](hashCalculator)
-  val miner = Miner.make[IO](blockVerifier, nonceProvider)
-
   "Miner.mine" should "mine a block with a very non-demanding target" in {
+    val miner = setupMiner()
 
     val target = MiningTarget.byLeadingZeros(1)
 
@@ -39,6 +35,8 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
   }
 
   "Mining genesis" should "mine a very specific genesis block" in {
+    val miner = setupMiner()
+
     miner
       .mineGenesis()
       .asserting(block => {
@@ -47,5 +45,12 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
         block.parentHash shouldBe Hash(ZeroHash)
       })
 
+  }
+
+  def setupMiner(): Miner[IO] = {
+    val nonceProvider = NonceProvider.make[IO](new Random())
+    val hashCalculator = HashCalculator.make[IO]()
+    val blockVerifier = BlockVerifier.make[IO](hashCalculator)
+    Miner.make[IO](blockVerifier, nonceProvider)
   }
 }
