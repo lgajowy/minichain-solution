@@ -1,9 +1,8 @@
-package com.lgajowy.minichain.domain
+package com.lgajowy.minichain.tools
 
-object Base {
+object BasePrimitives {
   type Number = BigInt
   val Number = BigInt
-  type Nonce = Long
   type Bytes = Array[Byte]
   val Bytes = new Array[Byte](_: Int)
 }

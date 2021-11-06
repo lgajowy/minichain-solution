@@ -1,7 +1,6 @@
 package com.lgajowy.minichain.tools
 
-import com.lgajowy.minichain.domain.Base.Bytes
-import com.lgajowy.minichain.domain.Hash
+import BasePrimitives.Bytes
 
 import java.security.MessageDigest
 
@@ -9,15 +8,15 @@ object Sha256 {
   private val algorithm = "SHA-256"
   private val numberOfBytes = 32
 
-  val zeroHash: Hash = {
+  val zeroHash: Bytes = {
     val instance = getDigestMessageInstance()
     instance.update(Bytes(32))
-    Hash(instance.digest())
+    instance.digest()
   }
 
   // TODO: Is this thread safe now, that we get a new MessageDigest every time?
   //  Is this memory efficient (can I do better)?
-  def apply(aggregatedBytes: Bytes*): Hash = {
+  def apply(aggregatedBytes: Bytes*): Bytes = {
     val messageDigest: MessageDigest = getDigestMessageInstance()
     val allBytes: Array[Byte] = aggregatedBytes.flatten.toArray
     messageDigest.update(allBytes)
@@ -27,7 +26,7 @@ object Sha256 {
     // TODO: Do I need this assertion anyway?
     assert(hash.length == numberOfBytes)
 
-    Hash(hash)
+    hash
   }
 
   private def getDigestMessageInstance(): MessageDigest = MessageDigest.getInstance(algorithm)

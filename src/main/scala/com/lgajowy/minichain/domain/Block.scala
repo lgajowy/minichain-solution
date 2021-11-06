@@ -1,11 +1,9 @@
 package com.lgajowy.minichain.domain
 
-import com.lgajowy.minichain.domain.Base.{ Nonce, Number }
-
 case class Block(
-  index: Int,
+  index: Index,
   parentHash: Hash,
   transactions: Seq[Transaction],
-  miningTargetNumber: Number,
+  miningTargetNumber: MiningTarget,
   nonce: Nonce
 )
