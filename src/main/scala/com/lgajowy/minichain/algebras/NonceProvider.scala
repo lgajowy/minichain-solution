@@ -11,10 +11,7 @@ trait NonceProvider[F[_]] {
 }
 
 object NonceProvider {
-  def make[F[_]: Sync](seed: Long): NonceProvider[F] = new NonceProvider[F] {
-
-    private val random = new Random(seed)
-
+  def make[F[_]: Sync](random: Random): NonceProvider[F] = new NonceProvider[F] {
     override def getNextNonce(): F[Nonce] = Sync[F].delay { random.nextLong }.map(Nonce)
   }
 }
