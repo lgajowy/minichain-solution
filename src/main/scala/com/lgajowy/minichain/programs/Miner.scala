@@ -1,8 +1,8 @@
 package com.lgajowy.minichain.programs
 
-import cats.effect.Sync
+import cats.Monad
 import cats.implicits._
-import com.lgajowy.minichain.algebras.{ BlockVerifier, NonceProvider }
+import com.lgajowy.minichain.algebras.{BlockVerifier, NonceProvider}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.tools.Sha256
@@ -20,7 +20,7 @@ trait Miner[F[_]] {
 }
 
 object Miner {
-  def make[F[_]: Sync](
+  def make[F[_]: Monad](
     blockVerifier: BlockVerifier[F],
     nonceProvider: NonceProvider[F]
   ): Miner[F] = new Miner[F] {
@@ -33,18 +33,17 @@ object Miner {
     ): F[Block] = {
 
       def task(): F[Block] = {
-        for {
+        val candidateGeneration: F[(Block, Boolean)] = for {
           nonce <- nonceProvider.getNextNonce()
-          candidate = Block(index, parentHash, transactions, miningTarget, nonce)
-          isCorrect <- blockVerifier.verify(candidate)
+          block = Block(index, parentHash, transactions, miningTarget, nonce)
+          verificationResult <- blockVerifier.verify(block)
+        } yield (block, verificationResult)
 
-          minedBlock <- if (isCorrect) {
-            Sync[F].delay(candidate)
-          } else {
-            mine(index, parentHash, transactions, miningTarget)
-          }
-        } yield minedBlock
+        candidateGeneration
+          .iterateUntil { case (_, isVerificationPositive) => isVerificationPositive }
+          .map { case (block, _) => block }
       }
+
       task()
     }
   }

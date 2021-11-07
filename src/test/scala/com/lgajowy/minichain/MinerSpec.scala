@@ -29,7 +29,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
     result.asserting(block => {
       block.index shouldBe Index(0)
-      block.miningTargetNumber shouldBe StdMiningTarget
+      block.miningTargetNumber shouldBe target
       block.parentHash shouldBe Hash(ZeroHash)
     })
   }
