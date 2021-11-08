@@ -7,9 +7,9 @@ import com.lgajowy.minichain.BasePrimitives.Bytes
 import com.lgajowy.minichain.algebras.{ BlockVerification, HashDigests, Nonces }
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
-import com.lgajowy.minichain.effects.Serialization
+import com.lgajowy.minichain.effects.{ Race, Serialization }
 
-final case class Miner[F[_]: Async: Serialization](
+final case class Miner[F[_]: Async: Serialization: Race](
   hashDigests: HashDigests[F],
   nonces: Nonces[F],
   blocks: BlockVerification[F],
@@ -35,20 +35,7 @@ final case class Miner[F[_]: Async: Serialization](
         .map { case (nonce, _) => Block(index, parentHash, transactions, miningTarget, nonce) }
     }
 
-    inParallel(blockTemplateBytes, task)
-  }
-
-  private def inParallel(blockTemplateBytes: F[Bytes], task: F[Bytes] => F[Block]): F[Block] = {
-    val tasks: List[F[Block]] = (0 until parallelism).map(_ => task(blockTemplateBytes)).toList
-    Foldable[List]
-      .foldLeft(tasks.tail, tasks.head) { (acc, next) =>
-        Async[F]
-          .race(acc, next)
-          .map {
-            case Right(value) => value
-            case Left(value)  => value
-          }
-      }
+    Race[F].race[Bytes, Block](parallelism, blockTemplateBytes, task)
   }
 
   def mineGenesis(parentHash: Hash): F[Block] = mine(
