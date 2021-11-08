@@ -1,8 +1,8 @@
 package com.lgajowy.minichain
 
-import cats.effect.IO
+import cats.effect.{ Async, IO }
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.lgajowy.minichain.algebras.{HashProvider, NonceProvider}
+import com.lgajowy.minichain.algebras.{ HashProvider, HashTransformer, NonceProvider }
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.programs.Miner
@@ -15,15 +15,29 @@ import scala.util.Random
 
 class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
-  "Miner.mine" should "mine a block with a very non-demanding target" in {
-    val miner = setupMiner()
+  private val stubHashTransformer: HashTransformer[IO] = new HashTransformer[IO] {
+    override def toNumber(hash: Hash): IO[BigInt] = IO.pure(0)
 
-    val target = MiningTarget.byLeadingZeros(1)
+    override def toHexString(hash: Hash): IO[String] = IO.pure("")
+  }
+
+  def setupMiner[F[_]: Async](hashTransformer: HashTransformer[F]): Miner[F] = {
+    val nonceProvider = NonceProvider.make[F](new Random())
+    val hashProvider = HashProvider.makeSHA256[F]()
+    Miner.make[F](hashProvider, hashTransformer, nonceProvider, 1)
+  }
+
+  "Miner.mine" should "mine a block" in {
+    val miner = setupMiner[IO](stubHashTransformer)
+
+    val target = MiningTarget.byLeadingZeros(31)
+
+    val transactions = Seq(Transaction("Simple transaction"))
 
     val result: IO[Block] = miner.mine(
       Index(0),
       Hash(Sha256.ZeroHash),
-      Seq(Transaction("Simple transaction")),
+      transactions,
       target
     )
 
@@ -31,11 +45,13 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
       block.index shouldBe Index(0)
       block.miningTargetNumber shouldBe target
       block.parentHash shouldBe Hash(ZeroHash)
+      block.transactions shouldBe transactions
+      block.nonce should not be (null)
     })
   }
 
   "Mining genesis" should "mine a very specific genesis block" in {
-    val miner = setupMiner()
+    val miner = setupMiner[IO](stubHashTransformer)
 
     miner
       .mineGenesis()
@@ -44,12 +60,5 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
         block.miningTargetNumber shouldBe StdMiningTarget
         block.parentHash shouldBe Hash(ZeroHash)
       })
-
-  }
-
-  def setupMiner(): Miner[IO] = {
-    val nonceProvider = NonceProvider.make[IO](new Random())
-    val digestProvider = HashProvider.makeSHA256[IO]()
-    Miner.make[IO](digestProvider, nonceProvider, 1)
   }
 }

@@ -3,7 +3,7 @@ package com.lgajowy.minichain.programs
 import cats.Foldable
 import cats.effect.kernel.Async
 import cats.implicits._
-import com.lgajowy.minichain.algebras.{HashProvider, NonceProvider}
+import com.lgajowy.minichain.algebras.{HashProvider, HashTransformer, NonceProvider}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.tools.Sha256
@@ -22,7 +22,8 @@ trait Miner[F[_]] {
 
 object Miner {
   def make[F[_]: Async](
-    digestProvider: HashProvider[F],
+    hashProvider: HashProvider[F],
+    hashTransformer: HashTransformer[F],
     nonceProvider: NonceProvider[F],
     parallelism: Int
   ): Miner[F] = new Miner[F] {
@@ -41,9 +42,10 @@ object Miner {
         val nonceCandidate: F[(Nonce, Boolean)] = for {
           nonce <- nonceProvider.getNextNonce()
           nonceBytes = Nonce.toBytes(nonce)
-          blockBytes = Array(blockTemplateBytes,  nonceBytes).flatten
-          blockHash <- digestProvider.getHashDigest(blockBytes)
-          isValid = Hash.toNumber(blockHash) < miningTarget.value
+          blockBytes = Array(blockTemplateBytes, nonceBytes).flatten
+          blockHash <- hashProvider.getHashDigest(blockBytes)
+          hashNumber <- hashTransformer.toNumber(blockHash)
+          isValid = hashNumber < miningTarget.value
 
         } yield (nonce, isValid)
 

@@ -5,8 +5,6 @@ import com.lgajowy.minichain.tools.BasePrimitives.{ Bytes, Number }
 case class Hash(bytes: Bytes)
 
 object Hash {
-  def toNumber(hash: Hash): Number = Number(1, hash.bytes)
-
   def toHexString(hash: Hash): String = toHexString(hash.bytes)
 
   private def toHexString(bytes: Array[Byte]): String =
