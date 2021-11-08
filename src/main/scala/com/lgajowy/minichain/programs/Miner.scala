@@ -6,7 +6,6 @@ import cats.implicits._
 import com.lgajowy.minichain.algebras.{ HashProvider, HashTransformer, NonceProvider }
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
-import com.lgajowy.minichain.tools.Sha256
 
 final case class Miner[F[_]: Async](
   hashProvider: HashProvider[F],

@@ -1,8 +1,8 @@
 package com.lgajowy.minichain.algebras
 
 import cats.effect.Sync
-import com.lgajowy.minichain.domain.Hash
 import cats.implicits._
+import com.lgajowy.minichain.domain.Hash
 import com.lgajowy.minichain.tools.Sha256
 
 trait HashProvider[F[_]] {

@@ -1,8 +1,8 @@
 package com.lgajowy.minichain.algebras
 
 import cats.effect.Sync
-import com.lgajowy.minichain.domain.Nonce
 import cats.implicits._
+import com.lgajowy.minichain.domain.Nonce
 
 import scala.util.Random
 

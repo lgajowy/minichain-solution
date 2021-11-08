@@ -1,6 +1,6 @@
 package com.lgajowy.minichain.domain
 
-import com.lgajowy.minichain.tools.BasePrimitives.{ Bytes, Number }
+import com.lgajowy.minichain.tools.BasePrimitives.Bytes
 
 case class Hash(bytes: Bytes)
 

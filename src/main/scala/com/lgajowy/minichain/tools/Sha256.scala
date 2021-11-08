@@ -1,6 +1,6 @@
 package com.lgajowy.minichain.tools
 
-import BasePrimitives.Bytes
+import com.lgajowy.minichain.tools.BasePrimitives.Bytes
 
 import java.security.MessageDigest
 

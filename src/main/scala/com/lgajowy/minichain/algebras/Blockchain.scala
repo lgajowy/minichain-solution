@@ -1,9 +1,9 @@
 package com.lgajowy.minichain.algebras
 
-import cats.{ Applicative, Monad }
-import com.lgajowy.minichain.domain._
 import cats.implicits._
+import cats.{ Applicative, Monad }
 import com.lgajowy.minichain.domain.Block.toBytes
+import com.lgajowy.minichain.domain._
 
 trait Blockchain[F[_]] {
 

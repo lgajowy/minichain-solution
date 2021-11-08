@@ -1,8 +1,8 @@
 package com.lgajowy.minichain
 
-import cats.effect.{ Async, IO }
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.lgajowy.minichain.algebras.{ HashProvider, HashTransformer, NonceProvider }
+import cats.effect.{Async, IO}
+import com.lgajowy.minichain.algebras.{HashProvider, HashTransformer, NonceProvider}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.programs.Miner
