@@ -4,16 +4,16 @@ import cats.Foldable
 import cats.effect.kernel.Async
 import cats.implicits._
 import com.lgajowy.minichain.BasePrimitives.Bytes
-import com.lgajowy.minichain.algebras.{ HashProvider, HashTransformer, Nonces }
+import com.lgajowy.minichain.algebras.{ HashDigests, HashTransformer, Nonces }
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.effects.Serialization
 
 final case class Miner[F[_]: Async: Serialization](
-  hashProvider: HashProvider[F],
-  hashTransformer: HashTransformer[F],
-  nonceProvider: Nonces[F],
-  parallelism: Int
+                                                    hashProvider: HashDigests[F],
+                                                    hashTransformer: HashTransformer[F],
+                                                    nonceProvider: Nonces[F],
+                                                    parallelism: Int
 ) {
 
   def mine(index: Index, parentHash: Hash, transactions: Seq[Transaction], miningTarget: MiningTarget): F[Block] = {

@@ -1,13 +1,15 @@
 package com.lgajowy.minichain.domain
 
 import com.lgajowy.minichain.BasePrimitives.{Bytes, Number}
-import com.lgajowy.minichain.Sha256
 
 case class MiningTarget(value: Number)
 
 object MiningTarget {
+
+  private final val maxNumberOfBytes = 32
+
   def byLeadingZeros(zeros: Int): MiningTarget = {
-    require(zeros < Sha256.NumberOfBytes)
+    require(zeros < maxNumberOfBytes)
 
     val bytes: Bytes =
       Array.tabulate[Byte](32) { n =>

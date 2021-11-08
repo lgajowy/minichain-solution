@@ -2,16 +2,17 @@ package com.lgajowy.minichain
 
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.effect.{Async, IO}
-import com.lgajowy.minichain.algebras.{HashProvider, HashTransformer, Nonces}
+import com.lgajowy.minichain.algebras.{HashDigests, HashTransformer, Nonces}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.programs.Miner
-import Sha256.ZeroHash
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 
 class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
+
+  private final val parentHash: Hash = Hash(Array[Byte]())
 
   private val stubHashTransformer: HashTransformer[IO] = new HashTransformer[IO] {
     override def toNumber(hash: Hash): IO[BigInt] = IO.pure(0)
@@ -21,7 +22,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
   def setupMiner[F[_]: Async](hashTransformer: HashTransformer[F]): Miner[F] = {
     val nonceProvider = Nonces.make[F]()
-    val hashProvider = HashProvider.makeSHA256[F]()
+    val hashProvider = HashDigests.makeSHA256[F]()
     Miner[F](hashProvider, hashTransformer, nonceProvider, 1)
   }
 
@@ -34,7 +35,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
     val result: IO[Block] = miner.mine(
       Index(0),
-      Hash(Sha256.ZeroHash),
+      parentHash,
       transactions,
       target
     )
@@ -42,7 +43,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
     result.asserting(block => {
       block.index shouldBe Index(0)
       block.miningTarget shouldBe target
-      block.parentHash shouldBe Hash(ZeroHash)
+      block.parentHash shouldBe parentHash
       block.transactions shouldBe transactions
       block.nonce should not be (null)
     })
@@ -52,11 +53,11 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
     val miner = setupMiner[IO](stubHashTransformer)
 
     miner
-      .mineGenesis(Hash(Sha256.ZeroHash))
+      .mineGenesis(parentHash)
       .asserting(block => {
         block.index shouldBe Index(0)
         block.miningTarget shouldBe StdMiningTarget
-        block.parentHash shouldBe Hash(ZeroHash)
+        block.parentHash shouldBe parentHash
         block.transactions shouldBe Seq(Transaction("Hello Blockchain, this is Genesis :)"))
         block.nonce should not be (null)
       })

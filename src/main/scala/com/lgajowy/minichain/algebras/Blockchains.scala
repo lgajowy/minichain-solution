@@ -17,7 +17,7 @@ trait Blockchains[F[_]] {
 }
 
 object Blockchains {
-  def make[F[_]: Monad: Serialization](hashProvider: HashProvider[F]): Blockchains[F] = new Blockchains[F] {
+  def make[F[_]: Monad: Serialization](hashProvider: HashDigests[F]): Blockchains[F] = new Blockchains[F] {
     override def append(blockchain: Chain, block: Block): F[Chain] = {
       // TODO: verify block
       // TODO: check if index is ok
