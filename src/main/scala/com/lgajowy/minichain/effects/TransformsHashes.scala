@@ -1,18 +1,20 @@
-package com.lgajowy.minichain.algebras
+package com.lgajowy.minichain.effects
 
 import cats.Applicative
-import com.lgajowy.minichain.domain.Hash
 import com.lgajowy.minichain.BasePrimitives.Number
+import com.lgajowy.minichain.domain.Hash
 
-trait HashTransformer[F[_]] {
+trait TransformsHashes[F[_]] {
 
   def toNumber(hash: Hash): F[BigInt]
 
   def toHexString(hash: Hash): F[String]
 }
 
-object HashTransformer {
-  def make[F[_]: Applicative](): HashTransformer[F] = new HashTransformer[F] {
+object TransformsHashes {
+  def apply[F[_]: TransformsHashes]: TransformsHashes[F] = implicitly
+
+  implicit def make[F[_]: Applicative](): TransformsHashes[F] = new TransformsHashes[F] {
     override def toNumber(hash: Hash): F[BigInt] = Applicative[F].pure(Number(1, hash.bytes))
 
     override def toHexString(hash: Hash): F[String] = Applicative[F].pure(toHexString(hash.bytes))

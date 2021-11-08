@@ -1,33 +1,33 @@
 package com.lgajowy.minichain
 
+import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.effect.{Async, IO}
-import com.lgajowy.minichain.algebras.{HashDigests, HashTransformer, Nonces}
+import com.lgajowy.minichain.algebras.{ BlockVerification, HashDigests, Nonces }
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
+import com.lgajowy.minichain.effects.TransformsHashes
 import com.lgajowy.minichain.programs.Miner
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
-
 
 class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
   private final val parentHash: Hash = Hash(Array[Byte]())
 
-  private val stubHashTransformer: HashTransformer[IO] = new HashTransformer[IO] {
+  private implicit val stubHashTransformer: TransformsHashes[IO] = new TransformsHashes[IO] {
     override def toNumber(hash: Hash): IO[BigInt] = IO.pure(0)
 
     override def toHexString(hash: Hash): IO[String] = IO.pure("")
   }
-
-  def setupMiner[F[_]: Async](hashTransformer: HashTransformer[F]): Miner[F] = {
-    val nonceProvider = Nonces.make[F]()
-    val hashProvider = HashDigests.makeSHA256[F]()
-    Miner[F](hashProvider, hashTransformer, nonceProvider, 1)
+  def setupMiner(): Miner[IO] = {
+    val nonceProvider = Nonces.make[IO]()
+    val hashProvider = HashDigests.makeSHA256[IO]()
+    val blockVerification = BlockVerification.make[IO]()
+    Miner[IO](hashProvider, nonceProvider, blockVerification, 1)
   }
 
   "Miner.mine()" should "mine a block" in {
-    val miner = setupMiner[IO](stubHashTransformer)
+    val miner = setupMiner()
 
     val target = MiningTarget.byLeadingZeros(31)
 
@@ -50,7 +50,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
   }
 
   "Mining genesis" should "mine a very specific genesis block" in {
-    val miner = setupMiner[IO](stubHashTransformer)
+    val miner = setupMiner()
 
     miner
       .mineGenesis(parentHash)

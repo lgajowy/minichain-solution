@@ -4,16 +4,16 @@ import cats.Foldable
 import cats.effect.kernel.Async
 import cats.implicits._
 import com.lgajowy.minichain.BasePrimitives.Bytes
-import com.lgajowy.minichain.algebras.{ HashDigests, HashTransformer, Nonces }
+import com.lgajowy.minichain.algebras.{ BlockVerification, HashDigests, Nonces }
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.effects.Serialization
 
 final case class Miner[F[_]: Async: Serialization](
-                                                    hashProvider: HashDigests[F],
-                                                    hashTransformer: HashTransformer[F],
-                                                    nonceProvider: Nonces[F],
-                                                    parallelism: Int
+  hashDigests: HashDigests[F],
+  nonces: Nonces[F],
+  blocks: BlockVerification[F],
+  parallelism: Int
 ) {
 
   def mine(index: Index, parentHash: Hash, transactions: Seq[Transaction], miningTarget: MiningTarget): F[Block] = {
@@ -22,14 +22,13 @@ final case class Miner[F[_]: Async: Serialization](
 
     def task(blockTemplateBytes: F[Bytes]): F[Block] = {
       val nonceCandidate: F[(Nonce, Boolean)] = for {
-        nonce <- nonceProvider.getNextNonce()
+        nonce <- nonces.getNextNonce()
         nonceBytes <- Serialization[F].serialize(nonce)
         blockBytes <- blockTemplateBytes.map(Array(_, nonceBytes).flatten)
-        blockHash <- hashProvider.getHashDigest(blockBytes)
-        hashAsNumber <- hashTransformer.toNumber(blockHash)
-        isValid = hashAsNumber < miningTarget.value
+        blockHash <- hashDigests.getHashDigest(blockBytes)
+        isVerified <- blocks.verify(blockHash, miningTarget)
 
-      } yield (nonce, isValid)
+      } yield (nonce, isVerified)
 
       nonceCandidate
         .iterateUntil { case (_, isValid) => isValid }
