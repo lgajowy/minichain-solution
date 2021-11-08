@@ -7,15 +7,3 @@ case class Block(
   miningTarget: MiningTarget,
   nonce: Nonce
 )
-
-object Block {
-  def toBytes(block: Block): Array[Byte] = {
-    Array(
-      block.index.value.toByteArray,
-      block.parentHash.bytes,
-      block.transactions.flatMap(_.data.getBytes()).toArray,
-      block.miningTarget.value.toByteArray,
-      Nonce.toBytes(block.nonce)
-    ).flatten
-  }
-}

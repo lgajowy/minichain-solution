@@ -2,7 +2,7 @@ package com.lgajowy.minichain
 
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.effect.{Async, IO}
-import com.lgajowy.minichain.algebras.{HashProvider, HashTransformer, NonceProvider}
+import com.lgajowy.minichain.algebras.{HashProvider, HashTransformer, Nonces}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.programs.Miner
@@ -10,7 +10,6 @@ import Sha256.ZeroHash
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.util.Random
 
 class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
@@ -21,7 +20,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
   }
 
   def setupMiner[F[_]: Async](hashTransformer: HashTransformer[F]): Miner[F] = {
-    val nonceProvider = NonceProvider.make[F](new Random())
+    val nonceProvider = Nonces.make[F]()
     val hashProvider = HashProvider.makeSHA256[F]()
     Miner[F](hashProvider, hashTransformer, nonceProvider, 1)
   }

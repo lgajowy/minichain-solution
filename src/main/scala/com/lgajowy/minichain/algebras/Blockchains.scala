@@ -1,11 +1,11 @@
 package com.lgajowy.minichain.algebras
 
 import cats.implicits._
-import cats.{ Applicative, Monad }
-import com.lgajowy.minichain.domain.Block.toBytes
+import cats.{Applicative, Monad}
 import com.lgajowy.minichain.domain._
+import com.lgajowy.minichain.effects.Serialization
 
-trait Blockchain[F[_]] {
+trait Blockchains[F[_]] {
 
   def append(blockchain: Chain, block: Block): F[Chain]
 
@@ -16,8 +16,8 @@ trait Blockchain[F[_]] {
   def findCommonAncestor(chainA: Chain, chainB: Chain): F[Option[Block]]
 }
 
-object Blockchain {
-  def make[F[_]: Monad](hashProvider: HashProvider[F]): Blockchain[F] = new Blockchain[F] {
+object Blockchains {
+  def make[F[_]: Monad: Serialization](hashProvider: HashProvider[F]): Blockchains[F] = new Blockchains[F] {
     override def append(blockchain: Chain, block: Block): F[Chain] = {
       // TODO: verify block
       // TODO: check if index is ok
@@ -32,7 +32,12 @@ object Blockchain {
       } yield newChain
     }
 
-    private def calculateBlockHash(block: Block): F[Hash] = hashProvider.getHashDigest(toBytes(block))
+    private def calculateBlockHash(block: Block): F[Hash] = {
+      for {
+        blockBytes <- Serialization[F].serialize(block)
+        digest <- hashProvider.getHashDigest(blockBytes)
+      } yield digest
+    }
 
     override def findByIndex(blockchain: Chain, index: Index): F[Option[Block]] = {
       Applicative[F].pure(
