@@ -24,7 +24,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
   def setupMiner[F[_]: Async](hashTransformer: HashTransformer[F]): Miner[F] = {
     val nonceProvider = NonceProvider.make[F](new Random())
     val hashProvider = HashProvider.makeSHA256[F]()
-    Miner.make[F](hashProvider, hashTransformer, nonceProvider, 1)
+    Miner[F](hashProvider, hashTransformer, nonceProvider, 1)
   }
 
   "Miner.mine()" should "mine a block" in {
@@ -54,7 +54,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
     val miner = setupMiner[IO](stubHashTransformer)
 
     miner
-      .mineGenesis()
+      .mineGenesis(Hash(Sha256.ZeroHash))
       .asserting(block => {
         block.index shouldBe Index(0)
         block.miningTargetNumber shouldBe StdMiningTarget
