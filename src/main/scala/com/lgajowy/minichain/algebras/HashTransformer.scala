@@ -2,7 +2,7 @@ package com.lgajowy.minichain.algebras
 
 import cats.Applicative
 import com.lgajowy.minichain.domain.Hash
-import com.lgajowy.minichain.tools.BasePrimitives.Number
+import com.lgajowy.minichain.BasePrimitives.Number
 
 trait HashTransformer[F[_]] {
 

@@ -1,4 +1,4 @@
-package com.lgajowy.minichain.tools
+package com.lgajowy.minichain
 
 object BasePrimitives {
   type Number = BigInt

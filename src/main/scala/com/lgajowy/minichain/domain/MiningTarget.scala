@@ -1,7 +1,7 @@
 package com.lgajowy.minichain.domain
 
-import com.lgajowy.minichain.tools.BasePrimitives.{ Bytes, Number }
-import com.lgajowy.minichain.tools.Sha256
+import com.lgajowy.minichain.BasePrimitives.{Bytes, Number}
+import com.lgajowy.minichain.Sha256
 
 case class MiningTarget(value: Number)
 

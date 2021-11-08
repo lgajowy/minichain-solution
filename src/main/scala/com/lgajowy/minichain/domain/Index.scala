@@ -1,5 +1,5 @@
 package com.lgajowy.minichain.domain
 
-import com.lgajowy.minichain.tools.BasePrimitives.Number
+import com.lgajowy.minichain.BasePrimitives.Number
 
 case class Index(value: Number)

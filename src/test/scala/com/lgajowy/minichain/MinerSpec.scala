@@ -6,8 +6,7 @@ import com.lgajowy.minichain.algebras.{HashProvider, HashTransformer, NonceProvi
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.programs.Miner
-import com.lgajowy.minichain.tools.Sha256
-import com.lgajowy.minichain.tools.Sha256.ZeroHash
+import Sha256.ZeroHash
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
