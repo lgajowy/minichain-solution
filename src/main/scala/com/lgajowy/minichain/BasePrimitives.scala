@@ -4,5 +4,5 @@ object BasePrimitives {
   type Number = BigInt
   val Number = BigInt
   type Bytes = Array[Byte]
-  val Bytes = new Array[Byte](_: Int)
+  val Bytes = throw new RuntimeException("Uoooo O_o")
 }

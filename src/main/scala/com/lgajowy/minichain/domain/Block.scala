@@ -3,7 +3,7 @@ package com.lgajowy.minichain.domain
 case class Block(
   index: Index,
   parentHash: Hash,
-  transactions: Seq[Transaction],
+  transactions: List[Transaction],
   miningTarget: MiningTarget,
   nonce: Nonce
 )

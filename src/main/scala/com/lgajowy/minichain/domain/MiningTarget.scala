@@ -20,7 +20,7 @@ object MiningTarget {
         }
       }
 
-    MiningTarget(BigInt(1, bytes))
+    MiningTarget(Number(1, bytes))
   }
 
   final val StdMiningTarget = MiningTarget.byLeadingZeros(1)

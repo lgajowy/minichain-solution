@@ -6,7 +6,7 @@ import com.lgajowy.minichain.domain.Hash
 
 trait TransformsHashes[F[_]] {
 
-  def toNumber(hash: Hash): F[BigInt]
+  def toNumber(hash: Hash): F[Number]
 
   def toHexString(hash: Hash): F[String]
 }
@@ -15,7 +15,7 @@ object TransformsHashes {
   def apply[F[_]: TransformsHashes]: TransformsHashes[F] = implicitly
 
   implicit def make[F[_]: Applicative](): TransformsHashes[F] = new TransformsHashes[F] {
-    override def toNumber(hash: Hash): F[BigInt] = Applicative[F].pure(Number(1, hash.bytes))
+    override def toNumber(hash: Hash): F[Number] = Applicative[F].pure(Number(1, hash.bytes))
 
     override def toHexString(hash: Hash): F[String] = Applicative[F].pure(toHexString(hash.bytes))
 

@@ -1,6 +1,6 @@
 package com.lgajowy.minichain.effects
 
-import cats.{Foldable, Functor}
+import cats.Foldable
 import cats.effect.kernel.Async
 import cats.implicits._
 

@@ -20,19 +20,18 @@ object Serialization {
     override def serialize(block: Block): F[Bytes] = {
       Applicative[F].pure(
         Array(
-          block.index.value.toByteArray,
+          BigInt(block.index.value).toByteArray,
           block.parentHash.bytes,
           block.transactions.flatMap(_.data.getBytes()).toArray,
           block.miningTarget.value.toByteArray,
           serializeNonce(block.nonce)
         ).flatten
       )
-
     }
 
     override def serialize(blockTemplate: BlockTemplate): F[Bytes] = Applicative[F].pure(
       Array(
-        blockTemplate.index.value.toByteArray,
+        BigInt(blockTemplate.index.value).toByteArray,
         blockTemplate.parentHash.bytes,
         blockTemplate.transactions.flatMap(_.data.getBytes()).toArray,
         blockTemplate.miningTarget.value.toByteArray

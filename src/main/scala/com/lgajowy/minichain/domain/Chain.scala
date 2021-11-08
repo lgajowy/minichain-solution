@@ -1,5 +1,9 @@
 package com.lgajowy.minichain.domain
 
+// vector blocków - zamienic
+// index => hash
+// co z tym anyval? newtypes?
+
 case class Chain(
   lastBlock: Block,
   indexToHash: Map[Index, Hash],
@@ -8,7 +12,7 @@ case class Chain(
 
 object Chain {
 
-  def apply(genesisBlock: Block, genesisBlockHash: Hash): Chain = {
+  def apply(): Chain = {
     Chain(
       genesisBlock,
       Map(genesisBlock.index -> genesisBlockHash),

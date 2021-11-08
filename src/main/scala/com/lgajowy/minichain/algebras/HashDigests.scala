@@ -18,7 +18,9 @@ object HashDigests {
 
   def makeSHA256[F[_]: Sync](): HashDigests[F] = new HashDigests[F] {
 
-    override final val zeroHash: F[Hash] = getHashDigest(Bytes(32))
+
+    // TODO: constant instead of effectful value
+    override final val zeroHash: F[Hash] = getHashDigest(Array[Byte](32))
 
     override def getHashDigest(bytes: Array[Byte]): F[Hash] = {
       for {

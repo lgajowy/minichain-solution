@@ -1,6 +1,5 @@
 package com.lgajowy.minichain.programs
 
-import cats.Foldable
 import cats.effect.kernel.Async
 import cats.implicits._
 import com.lgajowy.minichain.BasePrimitives.Bytes
@@ -16,7 +15,7 @@ final case class Miner[F[_]: Async: Serialization: Race](
   parallelism: Int
 ) {
 
-  def mine(index: Index, parentHash: Hash, transactions: Seq[Transaction], miningTarget: MiningTarget): F[Block] = {
+  def mine(index: Index, parentHash: Hash, transactions: List[Transaction], miningTarget: MiningTarget): F[Block] = {
 
     val blockTemplateBytes = Serialization[F].serialize(BlockTemplate(index, parentHash, transactions, miningTarget))
 
@@ -26,8 +25,8 @@ final case class Miner[F[_]: Async: Serialization: Race](
         nonceBytes <- Serialization[F].serialize(nonce)
         blockBytes <- blockTemplateBytes.map(Array(_, nonceBytes).flatten)
         blockHash <- hashDigests.getHashDigest(blockBytes)
-        isVerified <- blocks.verify(blockHash, miningTarget)
-
+        block = Block(index, parentHash, transactions, miningTarget, nonce)
+        isVerified <- blocks.verify(block, blockHash)
       } yield (nonce, isVerified)
 
       nonceCandidate
@@ -38,10 +37,15 @@ final case class Miner[F[_]: Async: Serialization: Race](
     Race[F].race[Bytes, Block](parallelism, blockTemplateBytes, task)
   }
 
-  def mineGenesis(parentHash: Hash): F[Block] = mine(
-    Index(0),
-    parentHash,
-    Seq(Transaction("Hello Blockchain, this is Genesis :)")),
-    StdMiningTarget
-  )
+  def mineGenesis(): F[Block] = {
+    for {
+      zeroHash <- hashDigests.zeroHash()
+      genesis <- mine(
+        Index(0),
+        zeroHash,
+        List(Transaction("Hello Blockchain, this is Genesis :)")),
+        StdMiningTarget
+      )
+    } yield genesis
+  }
 }

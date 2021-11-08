@@ -1,7 +1,7 @@
 package com.lgajowy.minichain.algebras
 
 import cats.implicits._
-import cats.{Applicative, Monad}
+import cats.{ Applicative, Monad }
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.effects.Serialization
 
@@ -17,11 +17,17 @@ trait Blockchains[F[_]] {
 }
 
 object Blockchains {
-  def make[F[_]: Monad: Serialization](hashProvider: HashDigests[F]): Blockchains[F] = new Blockchains[F] {
+  def make[F[_]: Monad: Serialization](
+    hashProvider: HashDigests[F],
+    blockVerification: BlockVerification[F]
+  ): Blockchains[F] = new Blockchains[F] {
     override def append(blockchain: Chain, block: Block): F[Chain] = {
       // TODO: verify block
       // TODO: check if index is ok
       // TODO: check if parent hash is ok
+      // TODO: check if block is verified against the parent difficulty (Don't use block.difficulity to verify this block)
+      //
+      // WARNING: use parent's difficulty to verify
       for {
         hash <- calculateBlockHash(block)
         newChain = new Chain(
@@ -49,9 +55,15 @@ object Blockchains {
       )
     }
 
+
+    // TODO: mention tries (git hash saving mechanism)
     override def findByHash(blockchain: Chain, hash: Hash): F[Option[Block]] =
       Applicative[F].pure(blockchain.hashToBlock.get(hash))
 
+
+    // TODO: genesis is common ancestor
+    // TODO: test what happens if there is no common ancestor at all (different genesis blocks). (podrobiony blockchain).
+    // TODO: other node is common ancestor
     override def findCommonAncestor(chainA: Chain, chainB: Chain): F[Option[Block]] = ???
   }
 }
