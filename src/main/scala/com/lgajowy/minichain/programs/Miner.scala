@@ -1,8 +1,10 @@
 package com.lgajowy.minichain.programs
 
-import cats.Monad
+import cats.effect.{ Concurrent, IO }
+import cats.{ Foldable, Monad }
+import cats.effect.kernel.Async
 import cats.implicits._
-import com.lgajowy.minichain.algebras.{BlockVerifier, NonceProvider}
+import com.lgajowy.minichain.algebras.{ BlockVerifier, NonceProvider }
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.tools.Sha256
@@ -20,9 +22,10 @@ trait Miner[F[_]] {
 }
 
 object Miner {
-  def make[F[_]: Monad](
+  def make[F[_]: Async](
     blockVerifier: BlockVerifier[F],
-    nonceProvider: NonceProvider[F]
+    nonceProvider: NonceProvider[F],
+    parallelism: Int
   ): Miner[F] = new Miner[F] {
 
     override def mine(
@@ -44,7 +47,17 @@ object Miner {
           .map { case (block, _) => block }
       }
 
-      task()
+      val tasks: List[F[Block]] = (0 until parallelism).map(_ => task()).toList
+
+      Foldable[List]
+        .foldLeft(tasks.tail, tasks.head) { (acc, next) =>
+          Async[F]
+            .race(acc, next)
+            .map {
+              case Right(value) => value
+              case Left(value)  => value
+            }
+        }
     }
   }
 }
