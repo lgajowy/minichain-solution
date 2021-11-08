@@ -27,7 +27,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
     Miner.make[F](hashProvider, hashTransformer, nonceProvider, 1)
   }
 
-  "Miner.mine" should "mine a block" in {
+  "Miner.mine()" should "mine a block" in {
     val miner = setupMiner[IO](stubHashTransformer)
 
     val target = MiningTarget.byLeadingZeros(31)
@@ -59,6 +59,8 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
         block.index shouldBe Index(0)
         block.miningTargetNumber shouldBe StdMiningTarget
         block.parentHash shouldBe Hash(ZeroHash)
+        block.transactions shouldBe Seq(Transaction("Hello Blockchain, this is Genesis :)"))
+        block.nonce should not be (null)
       })
   }
 }
