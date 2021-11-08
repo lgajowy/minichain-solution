@@ -43,7 +43,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
     result.asserting(block => {
       block.index shouldBe Index(0)
-      block.miningTargetNumber shouldBe target
+      block.miningTarget shouldBe target
       block.parentHash shouldBe Hash(ZeroHash)
       block.transactions shouldBe transactions
       block.nonce should not be (null)
@@ -57,7 +57,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
       .mineGenesis(Hash(Sha256.ZeroHash))
       .asserting(block => {
         block.index shouldBe Index(0)
-        block.miningTargetNumber shouldBe StdMiningTarget
+        block.miningTarget shouldBe StdMiningTarget
         block.parentHash shouldBe Hash(ZeroHash)
         block.transactions shouldBe Seq(Transaction("Hello Blockchain, this is Genesis :)"))
         block.nonce should not be (null)
