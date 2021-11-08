@@ -4,7 +4,11 @@ import cats.Applicative
 import com.lgajowy.minichain.BasePrimitives.Number
 import com.lgajowy.minichain.domain.Hash
 
+
+// MOve this back to Hash.scala
 trait TransformsHashes[F[_]] {
+
+
 
   def toNumber(hash: Hash): F[Number]
 

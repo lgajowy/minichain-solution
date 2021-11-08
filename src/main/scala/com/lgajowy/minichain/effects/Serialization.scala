@@ -4,6 +4,8 @@ import cats.Applicative
 import com.lgajowy.minichain.BasePrimitives.Bytes
 import com.lgajowy.minichain.domain.{Block, BlockTemplate, Nonce}
 
+
+// transform to pure static functions
 trait Serialization[F[_]] {
 
   def serialize(block: Block): F[Bytes]
