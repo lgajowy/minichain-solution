@@ -1,10 +1,9 @@
 package com.lgajowy.minichain.programs
 
-import cats.effect.{ Concurrent, IO }
-import cats.{ Foldable, Monad }
+import cats.Foldable
 import cats.effect.kernel.Async
 import cats.implicits._
-import com.lgajowy.minichain.algebras.{ BlockVerifier, NonceProvider }
+import com.lgajowy.minichain.algebras.{HashProvider, NonceProvider}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.tools.Sha256
@@ -23,7 +22,7 @@ trait Miner[F[_]] {
 
 object Miner {
   def make[F[_]: Async](
-    blockVerifier: BlockVerifier[F],
+    digestProvider: HashProvider[F],
     nonceProvider: NonceProvider[F],
     parallelism: Int
   ): Miner[F] = new Miner[F] {
@@ -35,29 +34,38 @@ object Miner {
       miningTarget: MiningTarget
     ): F[Block] = {
 
-      def task(): F[Block] = {
-        val candidateGeneration: F[(Block, Boolean)] = for {
-          nonce <- nonceProvider.getNextNonce()
-          block = Block(index, parentHash, transactions, miningTarget, nonce)
-          verificationResult <- blockVerifier.verify(block)
-        } yield (block, verificationResult)
+      val blockTemplateBytes: Array[Byte] = BlockTemplate
+        .toBytes(BlockTemplate(index, parentHash, transactions, miningTarget))
 
-        candidateGeneration
-          .iterateUntil { case (_, isVerificationPositive) => isVerificationPositive }
-          .map { case (block, _) => block }
+      def task(): F[Block] = {
+        val nonceCandidate: F[(Nonce, Boolean)] = for {
+          nonce <- nonceProvider.getNextNonce()
+          nonceBytes = Nonce.toBytes(nonce)
+          blockBytes = Array(blockTemplateBytes,  nonceBytes).flatten
+          blockHash <- digestProvider.getHashDigest(blockBytes)
+          isValid = Hash.toNumber(blockHash) < miningTarget.value
+
+        } yield (nonce, isValid)
+
+        nonceCandidate
+          .iterateUntil { case (_, isValid) => isValid }
+          .map { case (nonce, _) => Block(index, parentHash, transactions, miningTarget, nonce) }
       }
 
-      val tasks: List[F[Block]] = (0 until parallelism).map(_ => task()).toList
-
-      Foldable[List]
-        .foldLeft(tasks.tail, tasks.head) { (acc, next) =>
-          Async[F]
-            .race(acc, next)
-            .map {
-              case Right(value) => value
-              case Left(value)  => value
-            }
-        }
+      inParallel(parallelism, task _)
     }
+  }
+
+  private def inParallel[F[_]: Async](parallelism: Int, task: () => F[Block]): F[Block] = {
+    val tasks: List[F[Block]] = (0 until parallelism).map(_ => task()).toList
+    Foldable[List]
+      .foldLeft(tasks.tail, tasks.head) { (acc, next) =>
+        Async[F]
+          .race(acc, next)
+          .map {
+            case Right(value) => value
+            case Left(value)  => value
+          }
+      }
   }
 }

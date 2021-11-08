@@ -12,6 +12,6 @@ trait NonceProvider[F[_]] {
 
 object NonceProvider {
   def make[F[_]: Sync](random: Random): NonceProvider[F] = new NonceProvider[F] {
-    override def getNextNonce(): F[Nonce] = Sync[F].delay { random.nextLong }.map(Nonce)
+    override def getNextNonce(): F[Nonce] = Sync[F].delay { random.nextLong }.map(Nonce(_))
   }
 }
