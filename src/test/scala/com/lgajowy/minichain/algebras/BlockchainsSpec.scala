@@ -181,6 +181,44 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
+  it should "find a common ancestor" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification(true)
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      commonAncestor = createBlock(genesisHash, Index(1))
+      commonAncestorHash <- hashDigests.getHashDigest(serialize(commonAncestor))
+      chainA = Chain(
+        Vector(genesis, commonAncestor),
+        Map(
+          genesisHash -> genesis,
+          commonAncestorHash -> commonAncestor
+        )
+      )
+
+      extraNode = createBlock(commonAncestorHash, Index(2))
+      extraNodeHash <- hashDigests.getHashDigest(serialize(extraNode))
+
+      chainB = Chain(
+        Vector(genesis, commonAncestor, extraNode),
+        Map(
+          genesisHash -> genesis,
+          commonAncestorHash -> commonAncestor,
+          extraNodeHash -> extraNode
+        )
+      )
+      foundCommonAncestor <- blockchains.findCommonAncestor(chainA, chainB)
+
+    } yield (foundCommonAncestor, commonAncestor))
+      .asserting {
+        case (result, commonAncestor) =>
+          result shouldBe Some(commonAncestor)
+      }
+  }
+
   private def createBlock(parentHash: Hash, index: Index = Index(1)) = {
     Block(
       index,

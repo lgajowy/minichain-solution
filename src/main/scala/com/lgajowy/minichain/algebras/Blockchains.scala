@@ -36,7 +36,7 @@ object Blockchains {
     }
 
     private def getParentFromBlockchain(blockchain: Chain, block: Block): F[Either[NoSuchParentNodeError, Block]] = {
-      Monad[F].pure {
+      Applicative[F].pure {
         blockchain.hashToBlock.get(block.parentHash) match {
           case Some(block) => Right(block)
           case None        => Left(NoSuchParentNodeError())
@@ -96,6 +96,29 @@ object Blockchains {
     // TODO: genesis is common ancestor
     // TODO: test what happens if there is no common ancestor at all (different genesis blocks). (fake blockchain).
     // TODO: other node is common ancestor
-    override def findCommonAncestor(chainA: Chain, chainB: Chain): F[Option[Block]] = ???
+    override def findCommonAncestor(chainA: Chain, chainB: Chain): F[Option[Block]] = {
+        Applicative[F].pure(findCommonAncestorBlock(chainA, chainB))
+    }
+  }
+
+  // TODO: optimize
+  private def findCommonAncestorBlock(chainA: Chain, chainB: Chain): Option[Block] = {
+    val aBlocks = chainA.blocks
+    val bBlocks = chainB.blocks
+
+    val aIsLonger = aBlocks.length >= bBlocks.length
+    val longer = if (aIsLonger) aBlocks else bBlocks
+    val shorter = if (aIsLonger) bBlocks else aBlocks
+
+    val a = longer.take(shorter.length)
+    val b = shorter
+    val lastIndex = a.length -1
+
+    for (i <- lastIndex to 0 by -1) {
+      if (a(i) == b(i)) {
+        return Some(a(i))
+      }
+    }
+    None
   }
 }
