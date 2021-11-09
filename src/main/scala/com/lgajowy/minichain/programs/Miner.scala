@@ -8,6 +8,7 @@ import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.ext.Serializer.serialize
 import com.lgajowy.minichain.effects.Race
+import com.lgajowy.minichain.ext.Sha256
 
 final case class Miner[F[_]: Async: Race](
   hashDigests: HashDigests[F],
@@ -26,7 +27,7 @@ final case class Miner[F[_]: Async: Race](
         nonceBytes = serialize(nonce)
         blockBytes = blockTemplateBytes ++ nonceBytes
         blockHash <- hashDigests.getHashDigest(blockBytes)
-        isVerified <- blocks.verify(blockBytes, blockHash, blockTemplate.miningTarget)
+        isVerified <- blocks.verify(blockHash, blockTemplate.miningTarget)
       } yield (nonce, isVerified)
 
       nonceCandidate
@@ -40,7 +41,7 @@ final case class Miner[F[_]: Async: Race](
   def mineGenesis(): F[Block] = {
     val genesisTemplate = BlockTemplate(
       Index(0),
-      hashDigests.zeroHash,
+      Hash(Sha256.ZeroHash),
       List(Transaction("Hello Blockchain, this is Genesis :)")),
       StdMiningTarget
     )

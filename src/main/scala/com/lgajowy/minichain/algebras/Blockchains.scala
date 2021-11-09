@@ -45,10 +45,9 @@ object Blockchains {
     }
 
     def verifyBlock(block: Block, parentMiningTarget: MiningTarget): F[Either[BlockNotVerifiedProperly, Unit]] = {
-      val blockBytes = serialize(block)
       for {
-        blockHash <- hashDigests.getHashDigest(blockBytes)
-        isVerified <- blockVerification.verify(blockBytes, blockHash, parentMiningTarget)
+        blockHash <- hashDigests.getHashDigest(serialize(block))
+        isVerified <- blockVerification.verify(blockHash, parentMiningTarget)
         result = if (!isVerified) Left(BlockNotVerifiedProperly()) else Right()
       } yield result
     }

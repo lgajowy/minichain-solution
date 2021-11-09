@@ -5,6 +5,7 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.lgajowy.minichain.base.BasePrimitives.Bytes
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.ext.Serializer.serialize
+import com.lgajowy.minichain.ext.Sha256
 import org.scalatest.EitherValues
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -15,13 +16,13 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
 
   private val genesis: Block = Block(
     Index(0),
-    hashDigests.zeroHash,
+    Hash(Sha256.ZeroHash),
     List(Transaction("")),
     MiningTarget.StdMiningTarget,
     Nonce(123L)
   )
 
-  "Blockchains" should "append a correct block" in {
+  it should "append a correct block" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification(true)
@@ -41,7 +42,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  "Blockchains" should "not append a block when it wasn't verified successfully" in {
+  it should "not append a block when it wasn't verified successfully" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification(false)
@@ -58,7 +59,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  "Blockchains" should "not append a block when the parent hash is wrong" in {
+  it should "not append a block when the parent hash is wrong" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification()
@@ -80,7 +81,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  "Blockchains" should "not append a block has a non-following index" in {
+  it should "not append a block has a non-following index" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification()
@@ -97,7 +98,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  "Blockchains" should "not append when there is no parent with a given parent hash" in {
+  it should "not append when there is no parent with a given parent hash" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification()
@@ -115,7 +116,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  "Blockchains" should "not find a node with an incorrect index" in {
+  it should "not find a node with an incorrect index" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification()
@@ -131,7 +132,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  "Blockchains" should "find a node by index" in {
+  it should "find a node by index" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification()
@@ -147,7 +148,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  "Blockchains" should "find a node by hash" in {
+  it should "find a node by hash" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification()
@@ -163,7 +164,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  "Blockchains" should "not find a node by hash" in {
+  it should "not find a node by hash" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
       stubBlockVerification()
@@ -191,7 +192,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
   }
 
   private def stubBlockVerification(result: Boolean = true): BlockVerification[IO] = new BlockVerification[IO] {
-    override def verify(minedBlock: Bytes, blockHash: Hash, miningTarget: MiningTarget): IO[Boolean] = IO.pure(result)
+    override def verify(blockHash: Hash, miningTarget: MiningTarget): IO[Boolean] = IO.pure(result)
   }
 
   private def setupBlockchainsInterpreter(
