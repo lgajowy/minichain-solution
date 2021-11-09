@@ -30,7 +30,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
       chain = Chain(genesis, genesisHash)
-      appendedBlock = createCorrectBlock(genesisHash)
+      appendedBlock = createBlock(genesisHash)
       appendResult <- blockchains.append(chain, appendedBlock)
     } yield (appendResult, appendedBlock))
       .asserting {
@@ -50,7 +50,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
       chain = Chain(genesis, genesisHash)
-      blockToAppend = createCorrectBlock(genesisHash)
+      blockToAppend = createBlock(genesisHash)
       appendedBlock = blockToAppend
       appendResult <- blockchains.append(chain, appendedBlock)
     } yield appendResult)
@@ -59,7 +59,30 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
-  private def createCorrectBlock(genesisHash: Hash) = {
+  "Blockchains" should "not append a block when the parent hash is wrong" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification(true)
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      otherBlockHash <- hashDigests.getHashDigest(Bytes(32))
+      otherBlock = createBlock(otherBlockHash)
+      chain = Chain(
+        Vector(genesis, otherBlock),
+        Map(genesisHash -> genesis, otherBlockHash -> otherBlock)
+      )
+      blockToAppend = createBlock(genesisHash)
+      appendedBlock = blockToAppend
+      appendResult <- blockchains.append(chain, appendedBlock)
+    } yield appendResult)
+      .asserting { result =>
+        result shouldBe Left(IncorrectParentHash())
+      }
+  }
+
+  private def createBlock(genesisHash: Hash) = {
     Block(
       Index(1),
       genesisHash,

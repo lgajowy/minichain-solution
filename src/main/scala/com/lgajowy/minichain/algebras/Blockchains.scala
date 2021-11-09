@@ -69,7 +69,7 @@ object Blockchains {
         }
       }
 
-    def checkParentHashCorrectness(lastChainBlock: Block, block: Block): F[Either[ParentHashInvalid, Unit]] = {
+    def checkParentHashCorrectness(lastChainBlock: Block, block: Block): F[Either[IncorrectParentHash, Unit]] = {
       hashDigests
         .getHashDigest(serialize(lastChainBlock))
         .map { realParentHash =>
@@ -77,7 +77,7 @@ object Blockchains {
             if (realParentHash.toNumber() == block.parentHash.toNumber()) {
               Right()
             } else {
-              Left(ParentHashInvalid())
+              Left(IncorrectParentHash())
             }
           }
         }
