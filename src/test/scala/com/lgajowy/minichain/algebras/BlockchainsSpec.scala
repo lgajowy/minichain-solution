@@ -61,7 +61,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
   "Blockchains" should "not append a block when the parent hash is wrong" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
-      stubBlockVerification(true)
+      stubBlockVerification()
     )
 
     (for {
@@ -83,7 +83,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
   "Blockchains" should "not append a block has a non-following index" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
-      stubBlockVerification(false)
+      stubBlockVerification()
     )
 
     (for {
@@ -100,18 +100,83 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
   "Blockchains" should "not append when there is no parent with a given parent hash" in {
     val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
       hashDigests,
-      stubBlockVerification(false)
+      stubBlockVerification()
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      chain = Chain(genesis, genesisHash)
+      differentHash <- hashDigests.getHashDigest(Bytes(32))
+      blockToAppend = createBlock(differentHash, Index(1))
+      appendResult <- blockchains.append(chain, blockToAppend)
+    } yield appendResult)
+      .asserting { result =>
+        result shouldBe Left(NoSuchParentNodeError())
+      }
+  }
+
+  "Blockchains" should "not find a node with an incorrect index" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification()
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      chain = Chain(genesis, genesisHash)
+      foundBlock <- blockchains.findByIndex(chain, Index(1000))
+    } yield foundBlock)
+      .asserting { result =>
+        result shouldBe None
+      }
+  }
+
+  "Blockchains" should "find a node by index" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification()
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      chain = Chain(genesis, genesisHash)
+      foundBlock <- blockchains.findByIndex(chain, Index(0))
+    } yield foundBlock)
+      .asserting { result =>
+        result shouldBe Some(genesis)
+      }
+  }
+
+  "Blockchains" should "find a node by hash" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification()
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      chain = Chain(genesis, genesisHash)
+      foundBlock <- blockchains.findByHash(chain, genesisHash)
+    } yield foundBlock)
+      .asserting { result =>
+        result shouldBe Some(genesis)
+      }
+  }
+
+  "Blockchains" should "not find a node by hash" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification()
     )
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
       differentHash <- hashDigests.getHashDigest(Bytes(32))
       chain = Chain(genesis, genesisHash)
-      blockToAppend = createBlock(differentHash, Index(1))
-      appendResult <- blockchains.append(chain, blockToAppend)
-    } yield appendResult)
+      foundBlock <- blockchains.findByHash(chain, differentHash)
+    } yield foundBlock)
       .asserting { result =>
-        result shouldBe Left(NoSuchParentNodeError())
+        result shouldBe None
       }
   }
 
@@ -125,7 +190,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
     )
   }
 
-  private def stubBlockVerification(result: Boolean): BlockVerification[IO] = new BlockVerification[IO] {
+  private def stubBlockVerification(result: Boolean = true): BlockVerification[IO] = new BlockVerification[IO] {
     override def verify(minedBlock: Bytes, blockHash: Hash, miningTarget: MiningTarget): IO[Boolean] = IO.pure(result)
   }
 
