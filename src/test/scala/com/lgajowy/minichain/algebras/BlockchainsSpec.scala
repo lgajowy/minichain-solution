@@ -23,10 +23,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
   )
 
   it should "append a correct block" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification(true)
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -43,10 +40,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
   }
 
   it should "not append a block when it wasn't verified successfully" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification(false)
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(false))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -54,16 +48,11 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       blockToAppend = createBlock(genesisHash)
       appendResult <- blockchains.append(chain, blockToAppend)
     } yield appendResult)
-      .asserting { result =>
-        result shouldBe Left(BlockNotVerifiedProperly())
-      }
+      .asserting { _ shouldBe Left(BlockNotVerifiedProperly()) }
   }
 
   it should "not append a block when the parent hash is wrong" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification()
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -76,16 +65,11 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       blockToAppend = createBlock(genesisHash)
       appendResult <- blockchains.append(chain, blockToAppend)
     } yield appendResult)
-      .asserting { result =>
-        result shouldBe Left(IncorrectParentHash())
-      }
+      .asserting { _ shouldBe Left(IncorrectParentHash()) }
   }
 
   it should "not append a block has a non-following index" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification()
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -93,16 +77,11 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       blockToAppend = createBlock(genesisHash, Index(1000))
       appendResult <- blockchains.append(chain, blockToAppend)
     } yield appendResult)
-      .asserting { result =>
-        result shouldBe Left(InvalidBlockIndex())
-      }
+      .asserting { _ shouldBe Left(InvalidBlockIndex()) }
   }
 
   it should "not append when there is no parent with a given parent hash" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification()
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -111,64 +90,44 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       blockToAppend = createBlock(differentHash, Index(1))
       appendResult <- blockchains.append(chain, blockToAppend)
     } yield appendResult)
-      .asserting { result =>
-        result shouldBe Left(NoSuchParentNodeError())
-      }
+      .asserting { _ shouldBe Left(NoSuchParentNodeError()) }
   }
 
   it should "not find a node with an incorrect index" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification()
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
       chain = Chain(genesis, genesisHash)
       foundBlock <- blockchains.findByIndex(chain, Index(1000))
     } yield foundBlock)
-      .asserting { result =>
-        result shouldBe None
-      }
+      .asserting { _ shouldBe None }
   }
 
   it should "find a node by index" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification()
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
       chain = Chain(genesis, genesisHash)
       foundBlock <- blockchains.findByIndex(chain, Index(0))
     } yield foundBlock)
-      .asserting { result =>
-        result shouldBe Some(genesis)
-      }
+      .asserting { _ shouldBe Some(genesis) }
   }
 
   it should "find a node by hash" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification()
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
       chain = Chain(genesis, genesisHash)
       foundBlock <- blockchains.findByHash(chain, genesisHash)
     } yield foundBlock)
-      .asserting { result =>
-        result shouldBe Some(genesis)
-      }
+      .asserting { _ shouldBe Some(genesis) }
   }
 
   it should "not find a node by hash" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification()
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -176,16 +135,11 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       chain = Chain(genesis, genesisHash)
       foundBlock <- blockchains.findByHash(chain, differentHash)
     } yield foundBlock)
-      .asserting { result =>
-        result shouldBe None
-      }
+      .asserting { _ shouldBe None }
   }
 
   it should "find a common ancestor" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification(true)
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -220,10 +174,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
   }
 
   it should "not find a common ancestor in a invalid chain" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification(true)
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -242,14 +193,11 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       foundCommonAncestor <- blockchains.findCommonAncestor(chainA, chainB)
 
     } yield foundCommonAncestor)
-      .asserting(result => result shouldBe None)
+      .asserting(_ shouldBe None)
   }
 
   it should "claim genesis is the common ancestor" in {
-    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
-      hashDigests,
-      stubBlockVerification(true)
-    )
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
@@ -277,7 +225,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       foundCommonAncestor <- blockchains.findCommonAncestor(chainA, chainB)
 
     } yield foundCommonAncestor)
-      .asserting(result => result shouldBe Some(genesis))
+      .asserting(_ shouldBe Some(genesis))
   }
 
   private def createBlock(parentHash: Hash, index: Index = Index(1)) = {
@@ -290,7 +238,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
     )
   }
 
-  private def stubBlockVerification(result: Boolean = true): BlockVerification[IO] = new BlockVerification[IO] {
+  private def stubBlockVerification(result: Boolean): BlockVerification[IO] = new BlockVerification[IO] {
     override def verify(blockHash: Hash, miningTarget: MiningTarget): IO[Boolean] = IO.pure(result)
   }
 

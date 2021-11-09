@@ -6,6 +6,8 @@ import cats.{ Applicative, Monad }
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.ext.Serializer.serialize
 
+import scala.annotation.tailrec
+
 trait Blockchains[F[_]] {
   def append(blockchain: Chain, block: Block): F[Either[Error, Chain]]
 
@@ -97,28 +99,40 @@ object Blockchains {
     // TODO: test what happens if there is no common ancestor at all (different genesis blocks). (fake blockchain).
     // TODO: other node is common ancestor
     override def findCommonAncestor(chainA: Chain, chainB: Chain): F[Option[Block]] = {
-        Applicative[F].pure(findCommonAncestorBlock(chainA, chainB))
+      Applicative[F].pure(findCommonAncestorBlock(chainA.blocks, chainB.blocks))
     }
   }
 
-  // TODO: optimize
-  private def findCommonAncestorBlock(chainA: Chain, chainB: Chain): Option[Block] = {
-    val aBlocks = chainA.blocks
-    val bBlocks = chainB.blocks
-
-    val aIsLonger = aBlocks.length >= bBlocks.length
-    val longer = if (aIsLonger) aBlocks else bBlocks
-    val shorter = if (aIsLonger) bBlocks else aBlocks
+  private def findCommonAncestorBlock(chainA: Vector[Block], chainB: Vector[Block]): Option[Block] = {
+    val aIsLonger = chainA.length >= chainB.length
+    val longer = if (aIsLonger) chainA else chainB
+    val shorter = if (aIsLonger) chainB else chainA
 
     val a = longer.take(shorter.length)
     val b = shorter
-    val lastIndex = a.length -1
+    val lastIndex = a.length - 1
 
-    for (i <- lastIndex to 0 by -1) {
-      if (a(i) == b(i)) {
-        return Some(a(i))
+    findCommonAncestorTail(a, b, lastIndex)
+  }
+
+  @tailrec
+  private def findCommonAncestorTail(
+    blocksA: Vector[Block],
+    blocksB: Vector[Block],
+    index: Int
+  ): Option[Block] = {
+    if (index == -1) {
+      None
+    } else {
+      val a = blocksA(index)
+      val b = blocksB(index)
+
+      if (a == b) {
+        Some(a)
+      } else {
+        findCommonAncestorTail(blocksA, blocksB, index - 1)
       }
     }
-    None
+
   }
 }
