@@ -30,9 +30,9 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
     (for {
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
       chain = Chain(genesis, genesisHash)
-      appendedBlock = createBlock(genesisHash)
-      appendResult <- blockchains.append(chain, appendedBlock)
-    } yield (appendResult, appendedBlock))
+      blockToAppend = createBlock(genesisHash)
+      appendResult <- blockchains.append(chain, blockToAppend)
+    } yield (appendResult, blockToAppend))
       .asserting {
         case (result: Either[Error, Chain], appendedBlock: Block) => {
           result.value.blocks shouldBe Vector(genesis, appendedBlock)
@@ -51,8 +51,7 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       genesisHash <- hashDigests.getHashDigest(serialize(genesis))
       chain = Chain(genesis, genesisHash)
       blockToAppend = createBlock(genesisHash)
-      appendedBlock = blockToAppend
-      appendResult <- blockchains.append(chain, appendedBlock)
+      appendResult <- blockchains.append(chain, blockToAppend)
     } yield appendResult)
       .asserting { result =>
         result shouldBe Left(BlockNotVerifiedProperly())
@@ -74,18 +73,52 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
         Map(genesisHash -> genesis, otherBlockHash -> otherBlock)
       )
       blockToAppend = createBlock(genesisHash)
-      appendedBlock = blockToAppend
-      appendResult <- blockchains.append(chain, appendedBlock)
+      appendResult <- blockchains.append(chain, blockToAppend)
     } yield appendResult)
       .asserting { result =>
         result shouldBe Left(IncorrectParentHash())
       }
   }
 
-  private def createBlock(genesisHash: Hash) = {
+  "Blockchains" should "not append a block has a non-following index" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification(false)
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      chain = Chain(genesis, genesisHash)
+      blockToAppend = createBlock(genesisHash, Index(1000))
+      appendResult <- blockchains.append(chain, blockToAppend)
+    } yield appendResult)
+      .asserting { result =>
+        result shouldBe Left(InvalidBlockIndex())
+      }
+  }
+
+  "Blockchains" should "not append when there is no parent with a given parent hash" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification(false)
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      differentHash <- hashDigests.getHashDigest(Bytes(32))
+      chain = Chain(genesis, genesisHash)
+      blockToAppend = createBlock(differentHash, Index(1))
+      appendResult <- blockchains.append(chain, blockToAppend)
+    } yield appendResult)
+      .asserting { result =>
+        result shouldBe Left(NoSuchParentNodeError())
+      }
+  }
+
+  private def createBlock(parentHash: Hash, index: Index = Index(1)) = {
     Block(
-      Index(1),
-      genesisHash,
+      index,
+      parentHash,
       List(Transaction("Some transaction")),
       MiningTarget.StdMiningTarget,
       Nonce(123L)

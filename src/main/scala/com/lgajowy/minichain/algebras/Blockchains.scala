@@ -23,11 +23,11 @@ object Blockchains {
   ): Blockchains[F] = new Blockchains[F] {
 
     override def append(blockchain: Chain, block: Block): F[Either[Error, Chain]] = {
-      val parent: F[Either[NoParentNodeError, Block]] = getParentFromBlockchain(blockchain, block)
+      val parent: F[Either[NoSuchParentNodeError, Block]] = getParentFromBlockchain(blockchain, block)
 
       (for {
         parent <- EitherT(parent)
-        lastChainBlock <- EitherT(lastChainBlock(blockchain))
+        lastChainBlock = blockchain.blocks.last
         _ <- EitherT(checkParentHashCorrectness(lastChainBlock, block))
         _ <- EitherT(checkIndexCorrectness(lastChainBlock, block))
         _ <- EitherT(verifyBlock(block, parent.miningTarget))
@@ -35,11 +35,11 @@ object Blockchains {
       } yield updatedChain).value
     }
 
-    private def getParentFromBlockchain(blockchain: Chain, block: Block): F[Either[NoParentNodeError, Block]] = {
+    private def getParentFromBlockchain(blockchain: Chain, block: Block): F[Either[NoSuchParentNodeError, Block]] = {
       Monad[F].pure {
         blockchain.hashToBlock.get(block.parentHash) match {
           case Some(block) => Right(block)
-          case None        => Left(NoParentNodeError())
+          case None        => Left(NoSuchParentNodeError())
         }
       }
     }
@@ -51,13 +51,6 @@ object Blockchains {
         isVerified <- blockVerification.verify(blockBytes, blockHash, parentMiningTarget)
         result = if (!isVerified) Left(BlockNotVerifiedProperly()) else Right()
       } yield result
-    }
-
-    def lastChainBlock(chain: Chain): F[Either[NoParentNodeError, Block]] = Monad[F].pure {
-      chain.blocks.lastOption match {
-        case Some(value) => Right(value)
-        case None        => Left(NoParentNodeError())
-      }
     }
 
     def checkIndexCorrectness(lastChainBlock: Block, block: Block): F[Either[InvalidBlockIndex, Unit]] =
