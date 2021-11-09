@@ -219,6 +219,67 @@ class BlockchainsSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers with 
       }
   }
 
+  it should "not find a common ancestor in a invalid chain" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification(true)
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      chainA = new Chain(Vector(), Map())
+
+      extraNode = createBlock(genesisHash, Index(1))
+      extraNodeHash <- hashDigests.getHashDigest(serialize(extraNode))
+
+      chainB = Chain(
+        Vector(genesis, extraNode),
+        Map(
+          genesisHash -> genesis,
+          extraNodeHash -> extraNode
+        )
+      )
+      foundCommonAncestor <- blockchains.findCommonAncestor(chainA, chainB)
+
+    } yield foundCommonAncestor)
+      .asserting(result => result shouldBe None)
+  }
+
+  it should "claim genesis is the common ancestor" in {
+    val blockchains: Blockchains[IO] = setupBlockchainsInterpreter(
+      hashDigests,
+      stubBlockVerification(true)
+    )
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+
+      extraNode = createBlock(genesisHash, Index(1))
+      extraNodeHash <- hashDigests.getHashDigest(serialize(extraNode))
+
+      anotherNode = createBlock(genesisHash, Index(2))
+      anotherNodeHash <- hashDigests.getHashDigest(serialize(extraNode))
+
+      chainA = Chain(
+        Vector(genesis, extraNode, anotherNode),
+        Map(
+          genesisHash -> genesis,
+          extraNodeHash -> extraNode,
+          anotherNodeHash -> anotherNode
+        )
+      )
+
+      chainB = Chain(
+        Vector(genesis),
+        Map(genesisHash -> genesis)
+      )
+
+      foundCommonAncestor <- blockchains.findCommonAncestor(chainA, chainB)
+
+    } yield foundCommonAncestor)
+      .asserting(result => result shouldBe Some(genesis))
+  }
+
   private def createBlock(parentHash: Hash, index: Index = Index(1)) = {
     Block(
       index,
