@@ -2,50 +2,51 @@ package com.lgajowy.minichain.programs
 
 import cats.effect.kernel.Async
 import cats.implicits._
-import com.lgajowy.minichain.BasePrimitives.Bytes
-import com.lgajowy.minichain.algebras.{ BlockVerification, HashDigests, Nonces }
+import com.lgajowy.minichain.base.BasePrimitives.Bytes
+import com.lgajowy.minichain.algebras.{BlockVerification, HashDigests, Nonces}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
-import com.lgajowy.minichain.effects.{ Race, Serialization }
+import com.lgajowy.minichain.ext.Serializer.serialize
+import com.lgajowy.minichain.effects.Race
 
-final case class Miner[F[_]: Async: Serialization: Race](
+final case class Miner[F[_]: Async: Race](
   hashDigests: HashDigests[F],
   nonces: Nonces[F],
   blocks: BlockVerification[F],
   parallelism: Int
 ) {
 
-  def mine(index: Index, parentHash: Hash, transactions: List[Transaction], miningTarget: MiningTarget): F[Block] = {
+  def mine(blockTemplate: BlockTemplate): F[Block] = {
 
-    val blockTemplateBytes = Serialization[F].serialize(BlockTemplate(index, parentHash, transactions, miningTarget))
+    val blockTemplateBytes: Bytes = serialize(blockTemplate)
 
-    def task(blockTemplateBytes: F[Bytes]): F[Block] = {
+    def task(blockTemplateBytes: Bytes): F[Block] = {
       val nonceCandidate: F[(Nonce, Boolean)] = for {
         nonce <- nonces.getNextNonce()
-        nonceBytes <- Serialization[F].serialize(nonce)
-        blockBytes <- blockTemplateBytes.map(Array(_, nonceBytes).flatten)
+        nonceBytes = serialize(nonce)
+        // TODO: Check if it works well
+        blockBytes = blockTemplateBytes ++ nonceBytes
         blockHash <- hashDigests.getHashDigest(blockBytes)
-        block = Block(index, parentHash, transactions, miningTarget, nonce)
-        isVerified <- blocks.verify(block, blockHash)
+        block = blockTemplate.toBlock(nonce)
+        isVerified <- blocks.verify(block, blockHash, block.miningTarget)
       } yield (nonce, isVerified)
 
       nonceCandidate
         .iterateUntil { case (_, isValid) => isValid }
-        .map { case (nonce, _) => Block(index, parentHash, transactions, miningTarget, nonce) }
+        .map { case (nonce, _) => blockTemplate.toBlock(nonce) }
     }
 
     Race[F].race[Bytes, Block](parallelism, blockTemplateBytes, task)
   }
 
   def mineGenesis(): F[Block] = {
-    for {
-      zeroHash <- hashDigests.zeroHash()
-      genesis <- mine(
-        Index(0),
-        zeroHash,
-        List(Transaction("Hello Blockchain, this is Genesis :)")),
-        StdMiningTarget
-      )
-    } yield genesis
+    val genesisTemplate = BlockTemplate(
+      Index(0),
+      hashDigests.zeroHash,
+      List(Transaction("Hello Blockchain, this is Genesis :)")),
+      StdMiningTarget
+    )
+
+    mine(genesisTemplate)
   }
 }

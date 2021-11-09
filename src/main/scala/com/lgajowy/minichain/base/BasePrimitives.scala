@@ -1,8 +1,8 @@
-package com.lgajowy.minichain
+package com.lgajowy.minichain.base
 
 object BasePrimitives {
   type Number = BigInt
   val Number = BigInt
   type Bytes = Array[Byte]
-  val Bytes = throw new RuntimeException("Uoooo O_o")
+  val Bytes = new Array[Byte](_: Int)
 }

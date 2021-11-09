@@ -3,7 +3,7 @@ package com.lgajowy.minichain.algebras
 import cats.implicits._
 import cats.{ Applicative, Monad }
 import com.lgajowy.minichain.domain._
-import com.lgajowy.minichain.effects.Serialization
+import com.lgajowy.minichain.ext.Serializer.serialize
 
 trait Blockchains[F[_]] {
 
@@ -17,15 +17,14 @@ trait Blockchains[F[_]] {
 }
 
 object Blockchains {
-  def make[F[_]: Monad: Serialization](
+  def make[F[_]: Monad](
     hashProvider: HashDigests[F],
-    blockVerification: BlockVerification[F]
   ): Blockchains[F] = new Blockchains[F] {
     override def append(blockchain: Chain, block: Block): F[Chain] = {
       // TODO: verify block
       // TODO: check if index is ok
       // TODO: check if parent hash is ok
-      // TODO: check if block is verified against the parent difficulty (Don't use block.difficulity to verify this block)
+      // TODO: check if block is verified against the parent difficulty (Don't use block.difficulty to verify this block)
       //
       // WARNING: use parent's difficulty to verify
       for {
@@ -38,12 +37,7 @@ object Blockchains {
       } yield newChain
     }
 
-    private def calculateBlockHash(block: Block): F[Hash] = {
-      for {
-        blockBytes <- Serialization[F].serialize(block)
-        digest <- hashProvider.getHashDigest(blockBytes)
-      } yield digest
-    }
+    private def calculateBlockHash(block: Block): F[Hash] = hashProvider.getHashDigest(serialize(block))
 
     override def findByIndex(blockchain: Chain, index: Index): F[Option[Block]] = {
       Applicative[F].pure(
@@ -55,14 +49,12 @@ object Blockchains {
       )
     }
 
-
     // TODO: mention tries (git hash saving mechanism)
     override def findByHash(blockchain: Chain, hash: Hash): F[Option[Block]] =
       Applicative[F].pure(blockchain.hashToBlock.get(hash))
 
-
     // TODO: genesis is common ancestor
-    // TODO: test what happens if there is no common ancestor at all (different genesis blocks). (podrobiony blockchain).
+    // TODO: test what happens if there is no common ancestor at all (different genesis blocks). (fake blockchain).
     // TODO: other node is common ancestor
     override def findCommonAncestor(chainA: Chain, chainB: Chain): F[Option[Block]] = ???
   }

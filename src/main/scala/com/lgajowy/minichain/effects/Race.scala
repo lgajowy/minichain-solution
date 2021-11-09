@@ -5,14 +5,16 @@ import cats.effect.kernel.Async
 import cats.implicits._
 
 trait Race[F[_]] {
-  def race[A, B](parallelism: Int, taskInput: F[A], task: F[A] => F[B]): F[B]
+  def race[A, B](parallelism: Int, taskInput: A, task: A => F[B]): F[B]
 }
 
+
+// TODO simplify interface
 object Race {
   def apply[F[_]: Race]: Race[F] = implicitly
 
   implicit def make[F[_]: Async]: Race[F] = new Race[F] {
-    override def race[A, B](parallelism: Int, taskInput: F[A], task: F[A] => F[B]): F[B] = {
+    override def race[A, B](parallelism: Int, taskInput: A, task: A => F[B]): F[B] = {
       val tasks: List[F[B]] = (0 until parallelism).map(_ => task(taskInput)).toList
       Foldable[List]
         .foldLeft(tasks.tail, tasks.head) { (acc, next) =>

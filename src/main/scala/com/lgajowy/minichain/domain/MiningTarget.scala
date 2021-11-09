@@ -1,6 +1,6 @@
 package com.lgajowy.minichain.domain
 
-import com.lgajowy.minichain.BasePrimitives.{Bytes, Number}
+import com.lgajowy.minichain.base.BasePrimitives.{Bytes, Number}
 
 case class MiningTarget(value: Number)
 
