@@ -1,11 +1,10 @@
-package com.lgajowy.minichain
+package com.lgajowy.minichain.programs
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.lgajowy.minichain.algebras.{ BlockVerification, HashDigests, Nonces }
+import com.lgajowy.minichain.algebras.{BlockVerification, HashDigests, Nonces}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
-import com.lgajowy.minichain.programs.Miner
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 

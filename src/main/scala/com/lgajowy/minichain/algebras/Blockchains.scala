@@ -31,6 +31,7 @@ object Blockchains {
   ): Blockchains[F] = new Blockchains[F] {
 
     override def append(blockchain: Chain, block: Block): F[Either[Error, Chain]] = {
+
       val parent: F[Either[NoParentNodeError, Block]] = Monad[F].pure {
         blockchain.hashToBlock.get(block.parentHash) match {
           case Some(block) => Right(block)
@@ -62,12 +63,28 @@ object Blockchains {
         }
       }
 
-      def checkParentHashCorrectness(lastChainBlock: Block, block: Block): F[Either[Error, Unit]] = Monad[F].pure {
-        if (lastChainBlock.parentHash == block.parentHash) {
-          Right()
-        } else {
-          Left(ParentHashInvalid())
-        }
+      def checkParentHashCorrectness(lastChainBlock: Block, block: Block): F[Either[Error, Unit]] = {
+        hashDigests
+          .getHashDigest(serialize(lastChainBlock))
+          .map { realParentHash =>
+            {
+              if (realParentHash.toNumber() == block.parentHash.toNumber()) {
+                Right()
+              } else {
+                Left(ParentHashInvalid())
+              }
+            }
+          }
+      }
+
+      def updateChain(chain: Chain, block: Block): F[Either[Error, Chain]] = {
+        for {
+          blockHash <- hashDigests.getHashDigest(serialize(block))
+          updatedChain = Chain(
+            chain.blocks :+ block,
+            chain.hashToBlock + (blockHash -> block)
+          )
+        } yield Right(updatedChain)
       }
 
       (for {
@@ -76,11 +93,7 @@ object Blockchains {
         _ <- EitherT(checkParentHashCorrectness(lastChainBlock, block))
         _ <- EitherT(checkIndexCorrectness(lastChainBlock, block))
         _ <- EitherT(verifyBlock(block, parent.miningTarget))
-        updatedChain = Chain(
-          blockchain.blocks :+ block,
-          blockchain.hashToBlock
-        )
-
+        updatedChain <- EitherT(updateChain(blockchain, block))
       } yield updatedChain).value
     }
 
