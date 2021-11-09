@@ -14,12 +14,6 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
   private final val parentHash: Hash = hashProvider.zeroHash
 
-  def setupMiner(hashProvider: HashDigests[IO]): Miner[IO] = {
-    val nonceProvider = Nonces.make[IO]()
-    val blockVerification = BlockVerification.make[IO](hashProvider)
-    Miner[IO](hashProvider, nonceProvider, blockVerification, 1)
-  }
-
   "Miner.mine()" should "mine a block" in {
     val miner = setupMiner(hashProvider)
 
@@ -65,5 +59,11 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
         block.transactions shouldBe List(Transaction("Hello Blockchain, this is Genesis :)"))
         block.nonce should not be null
       })
+  }
+
+  def setupMiner(hashProvider: HashDigests[IO]): Miner[IO] = {
+    val nonceProvider = Nonces.make[IO]()
+    val blockVerification = BlockVerification.make[IO](hashProvider)
+    Miner[IO](hashProvider, nonceProvider, blockVerification, 1)
   }
 }
