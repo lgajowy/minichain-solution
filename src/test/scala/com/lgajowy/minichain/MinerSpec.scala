@@ -17,7 +17,7 @@ class MinerSpec extends AsyncFlatSpec with AsyncIOSpec with Matchers {
 
   def setupMiner(hashProvider: HashDigests[IO]): Miner[IO] = {
     val nonceProvider = Nonces.make[IO]()
-    val blockVerification = BlockVerification.make[IO]()
+    val blockVerification = BlockVerification.make[IO](hashProvider)
     Miner[IO](hashProvider, nonceProvider, blockVerification, 1)
   }
 

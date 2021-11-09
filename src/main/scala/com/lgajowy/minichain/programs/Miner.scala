@@ -24,11 +24,9 @@ final case class Miner[F[_]: Async: Race](
       val nonceCandidate: F[(Nonce, Boolean)] = for {
         nonce <- nonces.getNextNonce()
         nonceBytes = serialize(nonce)
-        // TODO: Check if it works well
         blockBytes = blockTemplateBytes ++ nonceBytes
         blockHash <- hashDigests.getHashDigest(blockBytes)
-        block = blockTemplate.toBlock(nonce)
-        isVerified <- blocks.verify(block, blockHash, block.miningTarget)
+        isVerified <- blocks.verify(blockBytes, blockHash, blockTemplate.miningTarget)
       } yield (nonce, isVerified)
 
       nonceCandidate
