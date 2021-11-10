@@ -1,8 +1,7 @@
-package minichain.algebras
+package com.lgajowy.minichain.algebras
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.lgajowy.minichain.algebras.{ BlockVerifier, BlockchainAPI, HashProvider }
 import com.lgajowy.minichain.base.BasePrimitives.Bytes
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.ext.Serializer.serialize

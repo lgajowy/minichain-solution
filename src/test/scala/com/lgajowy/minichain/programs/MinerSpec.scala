@@ -1,4 +1,4 @@
-package minichain.programs
+package com.lgajowy.minichain.programs
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -7,7 +7,6 @@ import com.lgajowy.minichain.base.BasePrimitives.Bytes
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.ext.Sha256
-import com.lgajowy.minichain.programs.Miner
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
