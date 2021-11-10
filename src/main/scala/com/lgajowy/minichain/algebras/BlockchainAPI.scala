@@ -6,12 +6,17 @@ import cats.{ Applicative, Monad }
 import com.lgajowy.minichain.domain._
 import com.lgajowy.minichain.ext.Serializer.serialize
 
+import scala.annotation.tailrec
+
 trait BlockchainAPI[F[_]] {
   def append(blockchain: Blockchain, block: Block): F[Either[Error, Blockchain]]
 
   def findByIndex(blockchain: Blockchain, index: Index): F[Option[Block]]
 
   def findByHash(blockchain: Blockchain, hash: Hash): F[Option[Block]]
+
+  def findCommonAncestor(chainA: Blockchain, chainB: Blockchain): F[Option[Block]]
+
 }
 
 object BlockchainAPI {
@@ -92,6 +97,40 @@ object BlockchainAPI {
 
     override def findByHash(blockchain: Blockchain, hash: Hash): F[Option[Block]] =
       Applicative[F].pure(blockchain.hashToBlock.get(hash))
-  }
 
+    override def findCommonAncestor(chainA: Blockchain, chainB: Blockchain): F[Option[Block]] =
+      Applicative[F].pure(findCommonAncestorBlock(chainA.blocks, chainB.blocks))
+
+    private def findCommonAncestorBlock(chainA: Vector[Block], chainB: Vector[Block]): Option[Block] = {
+      val aIsLonger = chainA.length >= chainB.length
+      val longer = if (aIsLonger) chainA else chainB
+      val shorter = if (aIsLonger) chainB else chainA
+
+      val a = longer.take(shorter.length)
+      val b = shorter
+      val lastIndex = a.length - 1
+
+      findCommonAncestorTail(a, b, lastIndex)
+    }
+
+    @tailrec
+    private def findCommonAncestorTail(
+      blocksA: Vector[Block],
+      blocksB: Vector[Block],
+      index: Int
+    ): Option[Block] = {
+      if (index == -1) {
+        None
+      } else {
+        val a = blocksA(index)
+        val b = blocksB(index)
+
+        if (a == b) {
+          Some(a)
+        } else {
+          findCommonAncestorTail(blocksA, blocksB, index - 1)
+        }
+      }
+    }
+  }
 }

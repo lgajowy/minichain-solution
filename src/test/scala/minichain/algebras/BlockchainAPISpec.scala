@@ -139,6 +139,96 @@ class BlockchainAPISpec extends AsyncFlatSpec with AsyncIOSpec with Matchers wit
       .asserting { _ shouldBe None }
   }
 
+  it should "find a common ancestor" in {
+    val blockchains: BlockchainAPI[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      commonAncestor = createBlock(genesisHash, Index(1))
+      commonAncestorHash <- hashDigests.getHashDigest(serialize(commonAncestor))
+      chainA = Blockchain(
+        Vector(genesis, commonAncestor),
+        Map(
+          genesisHash -> genesis,
+          commonAncestorHash -> commonAncestor
+        )
+      )
+
+      extraNode = createBlock(commonAncestorHash, Index(2))
+      extraNodeHash <- hashDigests.getHashDigest(serialize(extraNode))
+
+      chainB = Blockchain(
+        Vector(genesis, commonAncestor, extraNode),
+        Map(
+          genesisHash -> genesis,
+          commonAncestorHash -> commonAncestor,
+          extraNodeHash -> extraNode
+        )
+      )
+      foundCommonAncestor <- blockchains.findCommonAncestor(chainA, chainB)
+
+    } yield (foundCommonAncestor, commonAncestor))
+      .asserting {
+        case (result, commonAncestor) =>
+          result shouldBe Some(commonAncestor)
+      }
+  }
+
+  it should "not find a common ancestor in a invalid chain" in {
+    val blockchains: BlockchainAPI[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+      chainA = new Blockchain(Vector(), Map())
+
+      extraNode = createBlock(genesisHash, Index(1))
+      extraNodeHash <- hashDigests.getHashDigest(serialize(extraNode))
+
+      chainB = Blockchain(
+        Vector(genesis, extraNode),
+        Map(
+          genesisHash -> genesis,
+          extraNodeHash -> extraNode
+        )
+      )
+      foundCommonAncestor <- blockchains.findCommonAncestor(chainA, chainB)
+
+    } yield foundCommonAncestor)
+      .asserting(_ shouldBe None)
+  }
+
+  it should "claim genesis is the common ancestor" in {
+    val blockchains: BlockchainAPI[IO] = setupBlockchainsInterpreter(hashDigests, stubBlockVerification(true))
+
+    (for {
+      genesisHash <- hashDigests.getHashDigest(serialize(genesis))
+
+      extraNode = createBlock(genesisHash, Index(1))
+      extraNodeHash <- hashDigests.getHashDigest(serialize(extraNode))
+
+      anotherNode = createBlock(genesisHash, Index(2))
+      anotherNodeHash <- hashDigests.getHashDigest(serialize(extraNode))
+
+      chainA = Blockchain(
+        Vector(genesis, extraNode, anotherNode),
+        Map(
+          genesisHash -> genesis,
+          extraNodeHash -> extraNode,
+          anotherNodeHash -> anotherNode
+        )
+      )
+
+      chainB = Blockchain(
+        Vector(genesis),
+        Map(genesisHash -> genesis)
+      )
+
+      foundCommonAncestor <- blockchains.findCommonAncestor(chainA, chainB)
+
+    } yield foundCommonAncestor)
+      .asserting(_ shouldBe Some(genesis))
+  }
+
   private def createBlock(parentHash: Hash, index: Index = Index(1)) = {
     Block(
       index,
