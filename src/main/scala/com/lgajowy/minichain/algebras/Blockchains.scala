@@ -91,13 +91,9 @@ object Blockchains {
       Applicative[F].pure(blockchain.blocks.get(index.value))
     }
 
-    // TODO: mention tries (git hash saving mechanism)
     override def findByHash(blockchain: Chain, hash: Hash): F[Option[Block]] =
       Applicative[F].pure(blockchain.hashToBlock.get(hash))
 
-    // TODO: genesis is common ancestor
-    // TODO: test what happens if there is no common ancestor at all (different genesis blocks). (fake blockchain).
-    // TODO: other node is common ancestor
     override def findCommonAncestor(chainA: Chain, chainB: Chain): F[Option[Block]] = {
       Applicative[F].pure(findCommonAncestorBlock(chainA.blocks, chainB.blocks))
     }
@@ -133,6 +129,5 @@ object Blockchains {
         findCommonAncestorTail(blocksA, blocksB, index - 1)
       }
     }
-
   }
 }

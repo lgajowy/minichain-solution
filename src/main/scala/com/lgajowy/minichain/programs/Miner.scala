@@ -2,12 +2,12 @@ package com.lgajowy.minichain.programs
 
 import cats.effect.kernel.Async
 import cats.implicits._
+import com.lgajowy.minichain.algebras.{ BlockVerification, HashDigests, Nonces }
 import com.lgajowy.minichain.base.BasePrimitives.Bytes
-import com.lgajowy.minichain.algebras.{BlockVerification, HashDigests, Nonces}
 import com.lgajowy.minichain.domain.MiningTarget.StdMiningTarget
 import com.lgajowy.minichain.domain._
-import com.lgajowy.minichain.ext.Serializer.serialize
 import com.lgajowy.minichain.effects.Race
+import com.lgajowy.minichain.ext.Serializer.serialize
 import com.lgajowy.minichain.ext.Sha256
 
 final case class Miner[F[_]: Async: Race](
@@ -35,7 +35,7 @@ final case class Miner[F[_]: Async: Race](
         .map { case (nonce, _) => blockTemplate.toBlock(nonce) }
     }
 
-    Race[F].race[Bytes, Block](parallelism, blockTemplateBytes, task)
+    Race[F].race(parallelism, task(blockTemplateBytes))
   }
 
   def mineGenesis(): F[Block] = {
