@@ -10,7 +10,7 @@ object Miner {
   // and every other block is mined by a miner.
   final val Genesis = Miner.mineNextBlock(
     index = 0, // The very first block
-    parentHash = Sha256.ZeroHash, // Let's assume this is by definition for the Genesis block.
+    parentHash = Hash(Sha256.ZeroHash), // Let's assume this is by definition for the Genesis block.
     transactions = Seq(Transaction("Hello Blockchain, this is Genesis :)")),
     MiningTarget.StdMiningTarget
   )
