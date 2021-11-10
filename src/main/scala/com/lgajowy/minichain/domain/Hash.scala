@@ -2,7 +2,6 @@ package com.lgajowy.minichain.domain
 
 import com.lgajowy.minichain.base.BasePrimitives.{Bytes, Number}
 
-
 // The idea behind any cryptographic hash representation in "mini-chain"
 // is to treat it as an immutable array of bytes that can be also viewed
 // as a number or a hex string. You will see that the number representation
