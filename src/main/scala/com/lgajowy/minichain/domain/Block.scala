@@ -19,8 +19,4 @@ case class Block(
   // To get the crypto hash of the block, just feed all fields to SHA-256.
   def cryptoHash: Hash = ???
 
-  // The essence of PoW is that it is a problem whose solution is easy
-  // (in computational resources) to verify but difficult to find.
-  def verifyThisHasBeenMinedProperly(): Unit =
-    assert(cryptoHash.toNumber < miningTargetNumber)
 }

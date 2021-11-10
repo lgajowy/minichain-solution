@@ -1,6 +1,5 @@
 package com.lgajowy.minichain.domain
 
-import com.lgajowy.minichain.base.BasePrimitives
 import com.lgajowy.minichain.base.BasePrimitives.{Bytes, Number}
 
 
@@ -10,7 +9,10 @@ import com.lgajowy.minichain.base.BasePrimitives.{Bytes, Number}
 // is used in the mining process. The hex representation is for logging
 // purposes.
 case class Hash(bytes: Bytes) {
-  def toNumber: Number = Number(1, bytes)
+  def toNumber(): Number = Number(1, bytes)
 
-  def toHexString: String = BasePrimitives.toHexString(bytes)
+  def toHexString(): String = toHexString(bytes)
+
+  private def toHexString(bytes: Bytes): String =
+    "0x" + bytes.map(b => String.format("%02X", Byte.box(b))).mkString("")
 }

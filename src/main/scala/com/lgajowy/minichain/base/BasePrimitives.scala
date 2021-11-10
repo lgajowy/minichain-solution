@@ -11,6 +11,4 @@ object BasePrimitives {
   type Number = BigInt
   val Number = BigInt
 
-  def toHexString(bytes: Array[Byte]): String =
-    "0x" + bytes.map(b => String.format("%02X", Byte.box(b))).mkString("")
 }
